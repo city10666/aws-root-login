@@ -36,8 +36,8 @@ else
 fi
 
 # Step 4: 重启 SSH 服务
-echo "重启 SSH 服务..."
-systemctl restart sshd
+echo "尝试重启 sshd 服务..."
+systemctl restart sshd || systemctl restart ssh
 
 EOF
 
