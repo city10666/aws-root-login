@@ -33,9 +33,28 @@ cp /etc/ssh/sshd_config.d/60-cloudimg-settings.conf /etc/ssh/sshd_config.d/60-cl
 # 修改配置文件
 sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
 
-# 重启 SSH 服务
-echo "重启 sshd 服务"
-systemctl restart sshd
+# 尝试重启 SSH 服务
+echo "重启 SSH 服务"
+if systemctl list-units --type=service | grep -q 'ssh.service'; then
+  sudo systemctl restart ssh
+  echo "使用 ssh.service 重新启动 SSH 服务"
+elif systemctl list-units --type=service | grep -q 'sshd.service'; then
+  sudo systemctl restart sshd
+  echo "使用 sshd.service 重新启动 SSH 服务"
+else
+  echo "无法找到 SSH 服务。请检查服务名称。"
+  exit 1
+fi
+
+# 验证服务状态
+if systemctl list-units --type=service | grep -q 'ssh.service'; then
+  sudo systemctl status ssh
+elif systemctl list-units --type=service | grep -q 'sshd.service'; then
+  sudo systemctl status sshd
+else
+  echo "无法找到 SSH 服务。请检查服务状态。"
+  exit 1
+fi
 
 # 脚本结束时间
 echo "脚本执行完毕：$(date)"
