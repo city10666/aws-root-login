@@ -56,16 +56,7 @@ sleep 10
 # 删除指定目录
 echo "删除目录 /home/ubuntu/aws-root-login"
 rm -rf /home/ubuntu/aws-root-login
-
-# 验证服务状态
-if systemctl list-units --type=service | grep -q 'ssh.service'; then
-  sudo systemctl status ssh
-elif systemctl list-units --type=service | grep -q 'sshd.service'; then
-  sudo systemctl status sshd
-else
-  echo "无法找到 SSH 服务。请检查服务状态。"
-  exit 1
-fi
+rm -rf /root/aws-root-login
 
 # 脚本结束时间
 echo "脚本执行完毕：$(date)"
