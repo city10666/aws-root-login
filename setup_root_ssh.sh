@@ -1,11 +1,15 @@
 #!/bin/bash
 
-# 确保脚本以 root 权限运行
-if [ "$(id -u)" -ne "0" ]; then
-  echo "此脚本必须以 root 用户身份运行。"
+# 确保脚本以非 root 用户运行
+if [ "$(id -u)" -eq "0" ]; then
+  echo "请以非 root 用户运行此脚本。"
   exit 1
 fi
 
+# 切换到 root 执行命令
+sudo bash <<EOF
+
+# 确保脚本以 root 权限运行
 echo "脚本开始执行：$(date)"
 
 # 设置 root 密码
@@ -66,3 +70,4 @@ fi
 
 # 脚本结束时间
 echo "脚本执行完毕：$(date)"
+EOF
