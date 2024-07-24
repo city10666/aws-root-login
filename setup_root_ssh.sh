@@ -46,6 +46,14 @@ else
   exit 1
 fi
 
+# 添加延迟以确保 SSH 服务完全重启
+echo "等待 10 秒以确保 SSH 服务完全重启"
+sleep 10
+
+# 删除指定目录
+echo "删除目录 /home/ubuntu/aws-root-login"
+rm -rf /home/ubuntu/aws-root-login
+
 # 验证服务状态
 if systemctl list-units --type=service | grep -q 'ssh.service'; then
   sudo systemctl status ssh
