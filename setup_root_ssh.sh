@@ -1,53 +1,72 @@
 #!/bin/bash
 
-# 1. 设置 root 密码
-echo "请设置 root 密码："
+# 确保脚本以非 root 用户运行
+if [ "$(id -u)" -eq "0" ]; then
+  echo "请以非 root 用户运行此脚本。"
+  exit 1
+fi
+
+# 设置 root 密码
+echo "设置 root 密码"
 sudo passwd root
 
-# 2. 切换到 root 用户并执行接下来的命令
-echo "请切换到 root 用户并继续执行以下操作："
-echo "输入 'su root' 并输入刚刚设置的 root 密码"
+# 切换到 root 用户并执行配置修改
+echo "切换到 root 用户"
+sudo bash <<EOF
 
-# 提示用户切换到 root 用户
-echo "按 Enter 键继续执行后续操作..."
-read -r
-
-# 3. 进行 SSH 配置修改
-echo "现在执行以下命令："
-echo "vi /etc/ssh/sshd_config"
+# 确保脚本以 root 权限运行
+echo "脚本开始执行：$(date)"
 
 # 修改 /etc/ssh/sshd_config 文件
-echo "请修改 /etc/ssh/sshd_config 文件："
-echo "找到 #PubkeyAuthentication yes 并修改为 PubkeyAuthentication yes"
-echo "找到 #PasswordAuthentication yes 并修改为 PasswordAuthentication yes"
-echo "在 PasswordAuthentication yes 后面添加 PermitRootLogin yes"
-echo "保存并退出 (按 'Esc' 键，然后输入 ':wq' 并按 Enter 键)"
+echo "修改 /etc/ssh/sshd_config 文件"
+# 备份原文件
+cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
 
-# 提示用户进行配置
-echo "配置完成后，按 Enter 键继续..."
-read -r
+# 修改配置文件
+sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+# 在 PasswordAuthentication yes 后增加 PermitRootLogin yes
+awk '/^PasswordAuthentication yes$/ {print; print "PermitRootLogin yes"; next}1' /etc/ssh/sshd_config > /etc/ssh/sshd_config.tmp && mv /etc/ssh/sshd_config.tmp /etc/ssh/sshd_config
 
-# 4. 修改 /etc/ssh/sshd_config.d/60-cloudimg-settings.conf 文件
-echo "请修改 /etc/ssh/sshd_config.d/60-cloudimg-settings.conf 文件："
-echo "找到 PasswordAuthentication no 并修改为 PasswordAuthentication yes"
-echo "保存并退出 (按 'Esc' 键，然后输入 ':wq' 并按 Enter 键)"
+# 修改 /etc/ssh/sshd_config.d/60-cloudimg-settings.conf 文件
+echo "修改 /etc/ssh/sshd_config.d/60-cloudimg-settings.conf 文件"
+# 备份原文件
+cp /etc/ssh/sshd_config.d/60-cloudimg-settings.conf /etc/ssh/sshd_config.d/60-cloudimg-settings.conf.bak
 
-# 提示用户进行配置
-echo "配置完成后，按 Enter 键继续..."
-read -r
+# 修改配置文件
+sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
 
-# 5. 重启 SSH 服务
-echo "请执行以下命令以重启 SSH 服务："
-echo "sudo systemctl restart sshd"
+# 重启 SSH 服务
+echo "重启 SSH 服务"
+if systemctl list-units --type=service | grep -q 'ssh.service'; then
+  sudo systemctl restart ssh
+  echo "使用 ssh.service 重新启动 SSH 服务"
+elif systemctl list-units --type=service | grep -q 'sshd.service'; then
+  sudo systemctl restart sshd
+  echo "使用 sshd.service 重新启动 SSH 服务"
+else
+  echo "无法找到 SSH 服务。请检查服务名称。"
+  exit 1
+fi
 
-# 提示用户重启服务
-echo "重启服务后，按 Enter 键继续..."
-read -r
+# 添加延迟以确保 SSH 服务完全重启
+echo "等待 10 秒以确保 SSH 服务完全重启"
+sleep 10
 
-# 6. 删除指定目录
-echo "现在，删除目录 /home/ubuntu/aws-root-login"
-echo "请输入以下命令以删除目录："
-echo "sudo rm -rf /home/ubuntu/aws-root-login"
+# 删除指定目录
+echo "删除目录 /home/ubuntu/aws-root-login"
+rm -rf /home/ubuntu/aws-root-login
 
-# 提示用户删除目录
-echo "完成所有步骤后，脚本执行完毕。"
+# 验证服务状态
+if systemctl list-units --type=service | grep -q 'ssh.service'; then
+  sudo systemctl status ssh
+elif systemctl list-units --type=service | grep -q 'sshd.service'; then
+  sudo systemctl status sshd
+else
+  echo "无法找到 SSH 服务。请检查服务状态。"
+  exit 1
+fi
+
+# 脚本结束时间
+echo "脚本执行完毕：$(date)"
+EOF
