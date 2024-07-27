@@ -1,4 +1,7 @@
-20240724一键改亚马逊云root密码登录ssh
+在aws ec2上使用root用户登录
+[亚马逊云](https://console.aws.amazon.com/console/home)
+
+一键改亚马逊云root密码登录ssh
 
 git clone https://github.com/city10666/aws-root-login.git
 
